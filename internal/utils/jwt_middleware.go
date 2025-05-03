@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/srgjo27/e-learning/internal/entity"
 	"github.com/srgjo27/e-learning/internal/usecase"
 )
 
@@ -23,13 +24,14 @@ func JWTMiddleware(authUseCase *usecase.AuthUseCase, next http.Handler) http.Han
 		}
 
 		token := parts[1]
-		userID, err := authUseCase.ParseToken(token)
+		userID, roleStr, err := authUseCase.ParseToken(token)
 		if err != nil {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
 
 		ctx := context.WithValue(r.Context(), "userID", userID)
+		ctx = context.WithValue(ctx, "userRole", entity.Role(roleStr))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

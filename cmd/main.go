@@ -12,9 +12,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/srgjo27/e-learning/internal/entity"
 	"github.com/srgjo27/e-learning/internal/infrastructure/repository"
 	"github.com/srgjo27/e-learning/internal/interface/rest"
 	"github.com/srgjo27/e-learning/internal/usecase"
+	"github.com/srgjo27/e-learning/internal/utils"
 )
 
 func main() {
@@ -42,18 +44,28 @@ func main() {
 	log.Println("Connected to MongoDB")
 
 	userCollection := client.Database("e-learning").Collection("users")
-
 	userRepo := repository.NewMongoUserRepository(userCollection)
-
 	authUseCase := usecase.NewAuthUseCase(userRepo, []byte(jwtSecret))
-
 	authHandler := rest.NewAuthHandler(authUseCase)
+	profileHandler := rest.NewProfileHandler(authUseCase)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/auth/register", authHandler.HandleRegister)
 	mux.HandleFunc("/v1/auth/login", authHandler.HandleLogin)
 	mux.HandleFunc("/v1/auth/password-reset/request", authHandler.HandlePasswordResetRequest)
 	mux.HandleFunc("/v1/auth/password-reset/reset", authHandler.HandlePasswordReset)
+
+	mux.Handle("v1/profile", utils.JWTMiddleware(authUseCase, profileHandler))
+
+	mux.Handle("/admin-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Welcome to Admin Area"))
+	}))))
+	mux.Handle("/teacher-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleTeacher)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Welcome to Teacher Area"))
+	}))))
+	mux.Handle("/student-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleStudent)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Welcome to Student Area"))
+	}))))
 
 	srv := &http.Server{
 		Addr:	":8080",

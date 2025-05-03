@@ -12,6 +12,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
+	FindByID(ctx context.Context, id string) (*entity.User, error)
 	UpdatePassword(ctx context.Context, userID string, newHashed string) error
 	UpdateEmail(ctx context.Context, userID string, newEmail string) error
 }
@@ -30,10 +31,14 @@ func NewAuthUseCase(repo UserRepository, jwtSecret []byte) *AuthUseCase {
 
 var resetTokens = make(map[string]string)
 
-func (a *AuthUseCase) Register(ctx context.Context, email, password string) error {
+func (a *AuthUseCase) Register(ctx context.Context, email, password string, role entity.Role) error {
 	existingUser, err := a.userRepo.FindByEmail(ctx, email)
 	if err == nil && existingUser != nil {
 		return entity.ErrEmailExists
+	}
+
+	if role != entity.RoleAdmin && role != entity.RoleTeacher && role != entity.RoleStudent {
+		role = entity.RoleStudent
 	}
 
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -44,6 +49,7 @@ func (a *AuthUseCase) Register(ctx context.Context, email, password string) erro
 	user := &entity.User{
 		Email:		email,
 		Password:	string(hashedPwd),
+		Role: 		role,
 		CreatedAt: 	time.Now(),
 	}
 
@@ -63,6 +69,7 @@ func (a *AuthUseCase) Login(ctx context.Context, email, password string) (string
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userId": user.ID.Hex(),
 		"email": user.Email,
+		"role": string(user.Role),
 		"exp": time.Now().Add(time.Hour * 72).Unix(),
 	})
 
@@ -71,7 +78,7 @@ func (a *AuthUseCase) Login(ctx context.Context, email, password string) (string
 	return tokenStr, err
 }
 
-func (a *AuthUseCase) ParseToken(tokenStr string) (string, error) {
+func (a *AuthUseCase) ParseToken(tokenStr string) (string, string, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error){
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, entity.ErrInvalidToken
@@ -80,20 +87,25 @@ func (a *AuthUseCase) ParseToken(tokenStr string) (string, error) {
 	}) 
 
 	if err != nil || !token.Valid {
-		return "", entity.ErrInvalidToken
+		return "", "", entity.ErrInvalidToken
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", entity.ErrInvalidToken
+		return "", "", entity.ErrInvalidToken
 	}
 
 	userID, ok := claims["userId"].(string)
 	if !ok {
-		return "", entity.ErrInvalidToken
+		return "", "", entity.ErrInvalidToken
 	}
 
-	return userID, nil
+	role, ok := claims["role"].(string)
+	if !ok {
+		role = string(entity.RoleStudent)
+	}
+
+	return userID, role, nil
 }
 
 func (a *AuthUseCase) RequestPasswordReset(ctx context.Context, email string) (string, error) {
@@ -152,3 +164,34 @@ func (a *AuthUseCase) ResetPassword(ctx context.Context, tokenStr, newPassword s
 	return err
 }
 
+func (a *AuthUseCase) GetProfile(ctx context.Context, userID string) (*entity.User, error) {
+	return a.userRepo.FindByID(ctx, userID)
+}
+
+func (a *AuthUseCase) UpdateProfile(ctx context.Context, userID, newEmail, newPassword string) error {
+	user, err := a.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		 return err
+	}
+
+	if newEmail != "" && newEmail != user.Email {
+		err := a.userRepo.UpdateEmail(ctx, userID, newEmail)
+		if err != nil {
+			return err
+		}
+	}
+
+	if newPassword != "" {
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		err = a.userRepo.UpdatePassword(ctx, userID, string(hashedPwd))
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}

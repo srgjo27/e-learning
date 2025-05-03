@@ -19,8 +19,9 @@ func NewAuthHandler(u *usecase.AuthUseCase) *AuthHandler {
 }
 
 type registerRequest struct {
-	Email	 string `json:"email"`
-	Password string `json:"password"`
+	Email	 string      `json:"email"`
+	Password string      `json:"password"`
+	Role 	 entity.Role `json:"role"`
 }
 
 type loginRequest struct {
@@ -55,7 +56,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.authUseCase.Register(r.Context(), req.Email, req.Password)
+	err := h.authUseCase.Register(r.Context(), req.Email, req.Password, req.Role)
 	if err != nil {
 		if err == entity.ErrEmailExists {
 			http.Error(w, "Email already registered", http.StatusConflict)
