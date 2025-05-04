@@ -15,6 +15,9 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id string) (*entity.User, error)
 	UpdatePassword(ctx context.Context, userID string, newHashed string) error
 	UpdateEmail(ctx context.Context, userID string, newEmail string) error
+	Delete(ctx context.Context, userID string) error
+	ListAll(ctx context.Context) ([]*entity.User, error)
+	UpdateRole(ctx context.Context, userID string, role entity.Role) error
 }
 
 type AuthUseCase struct {
@@ -194,4 +197,33 @@ func (a *AuthUseCase) UpdateProfile(ctx context.Context, userID, newEmail, newPa
 	}
 
 	return nil
+}
+
+func (a *AuthUseCase) DeleteUser(ctx context.Context, userID string) error {
+	return a.userRepo.Delete(ctx, userID)
+}
+
+func (a *AuthUseCase) ListAllUsers(ctx context.Context) ([]*entity.User, error) {
+	return a.userRepo.ListAll(ctx)
+}
+
+// func (a *AuthUseCase) UpdateUserRole(ctx context.Context, userID string, role entity.Role) error {
+// 	user, err := a.userRepo.FindByID(ctx, userID)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if role != entity.RoleAdmin && role != entity.RoleTeacher && role != entity.RoleStudent {
+// 		return errors.New("invalid role")
+// 	}
+
+// 	if user.Role == role {
+// 		return nil
+// 	}
+
+// 	return a.userRepo.UpdateEmail(ctx, userID, user.Email)
+// }
+
+func (a *AuthUseCase) UpdateUserRole(ctx context.Context, userID string, role entity.Role) error {
+	return a.userRepo.UpdateRole(ctx, userID, role)
 }

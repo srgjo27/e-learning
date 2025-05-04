@@ -95,3 +95,66 @@ func (r *MongoUserRepository) UpdateEmail(ctx context.Context, userID string, ne
 
 	return nil
 }
+
+func (r *MongoUserRepository) Delete(ctx context.Context, userID string) error {
+	oid, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return entity.ErrUserNotFound
+	}
+
+	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
+	}
+
+	if res.DeletedCount == 0 {
+		return entity.ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (r *MongoUserRepository) ListAll(ctx context.Context) ([]*entity.User, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var users []*entity.User
+
+	for cursor.Next(ctx) {
+		var user entity.User
+
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+
+		users = append(users, &user)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *MongoUserRepository) UpdateRole(ctx context.Context, userID string, role entity.Role) error {
+	oid, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return entity.ErrUserNotFound
+	}
+
+	filter := bson.M{"_id": oid}
+	update := bson.M{"$set": bson.M{"role": role}}
+	res, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return entity.ErrUserNotFound
+	}
+
+	return nil
+}
