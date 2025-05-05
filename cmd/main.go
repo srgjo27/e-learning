@@ -26,7 +26,7 @@ func main() {
 		mongoURI = uri
 	}
 
-	jwtSecret := ""
+	jwtSecret := "supersecretkey"
 	if secret := os.Getenv("JWT_SECRET"); secret != "" {
 		jwtSecret = secret
 	}

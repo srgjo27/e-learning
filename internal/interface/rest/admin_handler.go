@@ -38,7 +38,7 @@ func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "v1/admin/users/")
+	id := strings.TrimPrefix(r.URL.Path, "/admin/users/")
 	id = strings.TrimSuffix(id, "/role")
 	if id == "" {
 		http.Error(w, "User ID required", http.StatusBadRequest)
