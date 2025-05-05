@@ -45,10 +45,22 @@ func main() {
 	log.Println("Connected to MongoDB")
 
 	userCollection := client.Database("e-learning").Collection("users")
+	courseCollection := client.Database("e-learning").Collection("courses")
+	classCollection := client.Database("e-learning").Collection("classes")
+	announcementCollection := client.Database("e-learning").Collection("announcements")
+
 	userRepo := repository.NewMongoUserRepository(userCollection)
+	courseRepo := repository.NewMongoCourseRepository(courseCollection)
+	classRepo := repository.NewMongoClassRepository(classCollection)
+	announcementRepo := repository.NewMongoAnnouncementRepository(announcementCollection)
+
 	authUseCase := usecase.NewAuthUseCase(userRepo, []byte(jwtSecret))
+	adminUseCase := usecase.NewAdminUseCase(courseRepo, classRepo, announcementRepo)
+
 	authHandler := rest.NewAuthHandler(authUseCase)
 	profileHandler := rest.NewProfileHandler(authUseCase)
+	adminTasksHandler := rest.NewAdminTasksHandler(adminUseCase)
+	adminHandler := rest.NewAdminHandler(authUseCase)
 
 	router := mux.NewRouter()
 
@@ -59,8 +71,6 @@ func main() {
 
 	router.Handle("v1/profile", utils.JWTMiddleware(authUseCase, profileHandler))
 
-	adminHandler := rest.NewAdminHandler(authUseCase)
-
 	adminSubrouter := router.PathPrefix("/v1/admin").Subrouter()
 	adminSubrouter.Use(func(next http.Handler) http.Handler {
 		return utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleAdmin)(next))
@@ -69,13 +79,31 @@ func main() {
 	adminSubrouter.HandleFunc("/users/{id}/role", adminHandler.UpdateUserRole).Methods(http.MethodPut)
 	adminSubrouter.HandleFunc("/users/{id}", adminHandler.DeleteUser).Methods(http.MethodDelete)
 
+	adminSubrouter.HandleFunc("/courses", adminTasksHandler.ListCourses).Methods(http.MethodGet)
+	adminSubrouter.HandleFunc("/courses", adminTasksHandler.CreateCourse).Methods(http.MethodPost)
+	adminSubrouter.HandleFunc("/courses/{id}", adminTasksHandler.GetCourse).Methods(http.MethodGet)
+	adminSubrouter.HandleFunc("/courses/{id}", adminTasksHandler.UpdateCourse).Methods(http.MethodPut)
+	adminSubrouter.HandleFunc("/courses/{id}", adminTasksHandler.DeleteCourse).Methods(http.MethodDelete)
 
-	router.Handle("/teacher-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleTeacher)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to Teacher Area"))
-	}))))
-	router.Handle("/student-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleStudent)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to Student Area"))
-	}))))
+	adminSubrouter.HandleFunc("/classes", adminTasksHandler.ListClasses).Methods(http.MethodGet)
+	adminSubrouter.HandleFunc("/classes", adminTasksHandler.CreateClass).Methods(http.MethodPost)
+	adminSubrouter.HandleFunc("/classes/{id}", adminTasksHandler.GetClass).Methods(http.MethodGet)
+	adminSubrouter.HandleFunc("/classes/{id}", adminTasksHandler.UpdateClass).Methods(http.MethodPut)
+	adminSubrouter.HandleFunc("/classes/{id}", adminTasksHandler.DeleteClass).Methods(http.MethodDelete)
+
+	adminSubrouter.HandleFunc("/announcements", adminTasksHandler.ListAnnouncements).Methods(http.MethodGet)
+	adminSubrouter.HandleFunc("/announcements", adminTasksHandler.CreateAnnouncement).Methods(http.MethodPost)
+	adminSubrouter.HandleFunc("/announcements/{id}", adminTasksHandler.GetAnnouncement).Methods(http.MethodGet)
+	adminSubrouter.HandleFunc("/announcements/{id}", adminTasksHandler.UpdateAnnouncement).Methods(http.MethodPut)
+	adminSubrouter.HandleFunc("/announcements/{id}", adminTasksHandler.DeleteAnnouncement).Methods(http.MethodDelete)
+
+
+	// router.Handle("/teacher-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleTeacher)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("Welcome to Teacher Area"))
+	// }))))
+	// router.Handle("/student-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleStudent)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("Welcome to Student Area"))
+	// }))))
 
 	srv := &http.Server{
 		Addr:	":8080",
