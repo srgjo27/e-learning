@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/srgjo27/e-learning/internal/entity"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type CourseRepository interface {
@@ -12,6 +13,7 @@ type CourseRepository interface {
 	UpdateCourse(ctx context.Context, course *entity.Course) error 
 	DeleteCourse(ctx context.Context, id string) error
 	ListCourses(ctx context.Context) ([]*entity.Course, error)
+	ListCoursesByTeacher(ctx context.Context, teacherID primitive.ObjectID) ([]*entity.Course, error)
 }
 
 type ClassRepository interface {
@@ -20,6 +22,7 @@ type ClassRepository interface {
 	UpdateClass(ctx context.Context, class *entity.Class) error
 	DeleteClass(ctx context.Context, id string) error
 	ListClasses(ctx context.Context) ([]*entity.Class, error)
+	ListClassesByTeacher(ctx context.Context, teacherID primitive.ObjectID) ([]*entity.Class, error)
 }
 
 type AnnouncementRepository interface {

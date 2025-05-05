@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/srgjo27/e-learning/internal/entity"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,6 +19,7 @@ type UserRepository interface {
 	Delete(ctx context.Context, userID string) error
 	ListAll(ctx context.Context) ([]*entity.User, error)
 	UpdateRole(ctx context.Context, userID string, role entity.Role) error
+	FindUsersByIDs(ctx context.Context, studentIDs []primitive.ObjectID) ([]*entity.User, error)
 }
 
 type AuthUseCase struct {

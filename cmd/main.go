@@ -56,11 +56,13 @@ func main() {
 
 	authUseCase := usecase.NewAuthUseCase(userRepo, []byte(jwtSecret))
 	adminUseCase := usecase.NewAdminUseCase(courseRepo, classRepo, announcementRepo)
+	teacherUsecase := usecase.NewTeacherUseCase(courseRepo, classRepo, userRepo)
 
 	authHandler := rest.NewAuthHandler(authUseCase)
 	profileHandler := rest.NewProfileHandler(authUseCase)
 	adminTasksHandler := rest.NewAdminTasksHandler(adminUseCase)
 	adminHandler := rest.NewAdminHandler(authUseCase)
+	teacherHandler := rest.NewTeacherHandler(teacherUsecase)
 
 	router := mux.NewRouter()
 
@@ -98,9 +100,14 @@ func main() {
 	adminSubrouter.HandleFunc("/announcements/{id}", adminTasksHandler.DeleteAnnouncement).Methods(http.MethodDelete)
 
 
-	// router.Handle("/teacher-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleTeacher)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("Welcome to Teacher Area"))
-	// }))))
+	teacherSubrouter := router.PathPrefix("/v1/teacher").Subrouter()
+	teacherSubrouter.Use(func(next http.Handler) http.Handler {
+		return utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleTeacher)(next))
+	})
+	teacherSubrouter.HandleFunc("/courses", teacherHandler.ListCourses).Methods(http.MethodGet)
+	teacherSubrouter.HandleFunc("/classes", teacherHandler.ListClasses).Methods(http.MethodGet)
+	teacherSubrouter.HandleFunc("/classes/{id}/students", teacherHandler.ListStudents).Methods(http.MethodGet)
+	
 	// router.Handle("/student-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleStudent)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	w.Write([]byte("Welcome to Student Area"))
 	// }))))
