@@ -48,21 +48,29 @@ func main() {
 	courseCollection := client.Database("e-learning").Collection("courses")
 	classCollection := client.Database("e-learning").Collection("classes")
 	announcementCollection := client.Database("e-learning").Collection("announcements")
+	assignmentCollection := client.Database("e-learning").Collection("assignments")
+	assessmentCollection := client.Database("e-learning").Collection("assessments")
+	messageCollection := client.Database("e-learning").Collection("messages")
 
 	userRepo := repository.NewMongoUserRepository(userCollection)
 	courseRepo := repository.NewMongoCourseRepository(courseCollection)
 	classRepo := repository.NewMongoClassRepository(classCollection)
 	announcementRepo := repository.NewMongoAnnouncementRepository(announcementCollection)
+	assignmentRepo := repository.NewMongoAssignmentRepository(assignmentCollection)
+	assessmentRepo := repository.NewMongoAssessmentRepository(assessmentCollection)
+	messageRepo := repository.NewMongoMessageRepository(messageCollection)
 
 	authUseCase := usecase.NewAuthUseCase(userRepo, []byte(jwtSecret))
 	adminUseCase := usecase.NewAdminUseCase(courseRepo, classRepo, announcementRepo)
-	teacherUsecase := usecase.NewTeacherUseCase(courseRepo, classRepo, userRepo)
+	teacherUseCase := usecase.NewTeacherUseCase(courseRepo, classRepo, userRepo)
+	teacherAdvancedUseCase := usecase.NewTeacherAdvancedUseCase(assignmentRepo, assessmentRepo, messageRepo)
 
 	authHandler := rest.NewAuthHandler(authUseCase)
 	profileHandler := rest.NewProfileHandler(authUseCase)
 	adminTasksHandler := rest.NewAdminTasksHandler(adminUseCase)
 	adminHandler := rest.NewAdminHandler(authUseCase)
-	teacherHandler := rest.NewTeacherHandler(teacherUsecase)
+	teacherHandler := rest.NewTeacherHandler(teacherUseCase)
+	teacherAdvancedHandler := rest.NewTeacherAdvancedHandler(teacherAdvancedUseCase)
 
 	router := mux.NewRouter()
 
@@ -107,6 +115,13 @@ func main() {
 	teacherSubrouter.HandleFunc("/courses", teacherHandler.ListCourses).Methods(http.MethodGet)
 	teacherSubrouter.HandleFunc("/classes", teacherHandler.ListClasses).Methods(http.MethodGet)
 	teacherSubrouter.HandleFunc("/classes/{id}/students", teacherHandler.ListStudents).Methods(http.MethodGet)
+
+	teacherSubrouter.HandleFunc("/assignments", teacherAdvancedHandler.ListAssignments).Methods(http.MethodGet)
+	teacherSubrouter.HandleFunc("/assignments", teacherAdvancedHandler.CreateAssignment).Methods(http.MethodPost)
+	// Optional: Implement GET, PUT, DELETE for /assignments/{id} similarly
+
+	teacherSubrouter.HandleFunc("/messages", teacherAdvancedHandler.ListMessages).Methods(http.MethodGet)
+	teacherSubrouter.HandleFunc("/messages", teacherAdvancedHandler.CreateMessage).Methods(http.MethodPost)
 	
 	// router.Handle("/student-area", utils.JWTMiddleware(authUseCase, utils.RBACMiddleware(entity.RoleStudent)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	w.Write([]byte("Welcome to Student Area"))
