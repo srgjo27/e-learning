@@ -20,6 +20,7 @@ type AssessmentRepository interface {
 	GetAssessment(ctx context.Context, id string) (*entity.Assessment, error)
 	UpdateAssessment(ctx context.Context, a *entity.Assessment) error
 	DeleteAssessment(ctx context.Context, id string) error
+	ListAssessments(ctx context.Context) ([]*entity.Assessment, error)
 	ListAssessmentsByCourse(ctx context.Context, courseID primitive.ObjectID) ([]*entity.Assessment, error)
 }
 
@@ -29,6 +30,7 @@ type MessageRepository interface {
 	UpdateMessage(ctx context.Context, m *entity.Message) error
 	DeleteMessage(ctx context.Context, id string) error
 	ListMessagesBySender(ctx context.Context, senderID primitive.ObjectID) ([]*entity.Message, error)
+	ListMessagesForReceiver(ctx context.Context, receiverID primitive.ObjectID) ([]*entity.Message, error)
 }
 
 type TeacherAdvancedUseCase struct {
@@ -49,6 +51,7 @@ func NewTeacherAdvancedUseCase(
 	}
 }
 
+// --- Assignment ---
 func (t *TeacherAdvancedUseCase) CreateAssignment(ctx context.Context, a *entity.Assignment) error {
 	a.CreatedAt = a.CreatedAt.UTC()
 	return t.assignmentRepo.CreateAssignment(ctx, a)
@@ -74,6 +77,7 @@ func (t *TeacherAdvancedUseCase) ListAssignmentsByCourse(ctx context.Context, co
 	return t.assignmentRepo.ListAssignmentsByCourse(ctx, oid)
 }
 
+// --- Assessment ---
 func (t *TeacherAdvancedUseCase) CreateAssessment(ctx context.Context, a *entity.Assessment) error {
 	a.CreatedAt = a.CreatedAt.UTC()
 	return t.assessmentRepo.CreateAssessment(ctx, a)
@@ -99,6 +103,7 @@ func (t *TeacherAdvancedUseCase) ListAssessmentsByCourse(ctx context.Context, co
 	return t.assessmentRepo.ListAssessmentsByCourse(ctx, oid)
 }
 
+// --- Message ---
 func (t *TeacherAdvancedUseCase) CreateMessage(ctx context.Context, m *entity.Message) error {
 	m.CreatedAt = m.CreatedAt.UTC()
 	return t.messageRepo.CreateMessage(ctx, m)

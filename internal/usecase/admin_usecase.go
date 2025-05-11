@@ -23,6 +23,7 @@ type ClassRepository interface {
 	DeleteClass(ctx context.Context, id string) error
 	ListClasses(ctx context.Context) ([]*entity.Class, error)
 	ListClassesByTeacher(ctx context.Context, teacherID primitive.ObjectID) ([]*entity.Class, error)
+	ListClassesByStudent(ctx context.Context, studentID primitive.ObjectID) ([]*entity.Class, error)
 }
 
 type AnnouncementRepository interface {
@@ -47,6 +48,7 @@ func NewAdminUseCase(courseRepo CourseRepository, classRepo ClassRepository, ann
 	}
 }
 
+// --- Course ---
 func (a *AdminUseCase) CreateCourse(ctx context.Context, course *entity.Course) error {
 	return a.courseRepo.CreateCourse(ctx, course)
 }
@@ -67,6 +69,7 @@ func (a *AdminUseCase) ListCourses(ctx context.Context) ([]*entity.Course, error
 	return a.courseRepo.ListCourses(ctx)
 }
 
+// --- Class ---
 func (a *AdminUseCase) CreateClass(ctx context.Context, class *entity.Class) error {
 	return a.classRepo.CreateClass(ctx, class)
 }
@@ -87,6 +90,7 @@ func (a *AdminUseCase) ListClasses(ctx context.Context) ([]*entity.Class, error)
 	return a.classRepo.ListClasses(ctx)
 }
 
+// --- Announcement ---
 func (a *AdminUseCase) CreateAnnouncement(ctx context.Context, ann *entity.Announcement) error {
 	return a.announcementRepo.CreateAnnouncement(ctx, ann)
 }

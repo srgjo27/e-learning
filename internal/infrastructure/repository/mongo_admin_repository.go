@@ -34,6 +34,7 @@ func NewMongoAnnouncementRepository(c *mongo.Collection) *MongoAnnouncementRepos
 	return &MongoAnnouncementRepository{collection: c}
 }
 
+// --- Course ---
 func (r *MongoCourseRepository) CreateCourse(ctx context.Context, course *entity.Course) error {
 	course.CreatedAt = course.CreatedAt.UTC()
 	_, err := r.collection.InsertOne(ctx, course)
@@ -51,7 +52,7 @@ func (r *MongoCourseRepository) GetCourse(ctx context.Context, id string) (*enti
 	err = r.collection.FindOne(ctx, bson.M{"_id": oid}).Decode(&course)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.New("course not found")
+			return nil, entity.ErrCourseNotFound
 		}
 
 		return nil, err
@@ -112,8 +113,10 @@ func (r *MongoCourseRepository) ListCourses(ctx context.Context) ([]*entity.Cour
 	defer cursor.Close(ctx)
 
 	var courses []*entity.Course
+
 	for cursor.Next(ctx) {
 		var course entity.Course
+
 		if err := cursor.Decode(&course); err != nil {
 			return nil, err
 		}
@@ -123,6 +126,7 @@ func (r *MongoCourseRepository) ListCourses(ctx context.Context) ([]*entity.Cour
 	return courses, cursor.Err()
 }
 
+// --- Class ---
 func (r *MongoClassRepository) CreateClass(ctx context.Context, class *entity.Class) error {
 	class.CreatedAt = class.CreatedAt.UTC()
 	_, err := r.collection.InsertOne(ctx, class)
@@ -211,6 +215,7 @@ func (r *MongoClassRepository) ListClasses(ctx context.Context) ([]*entity.Class
 	return classes, cursor.Err()
 }
 
+// --- Announcement ---
 func (r *MongoAnnouncementRepository) CreateAnnouncement(ctx context.Context, ann *entity.Announcement) error {
 	ann.CreatedAt = ann.CreatedAt.UTC()
 	_, err := r.collection.InsertOne(ctx, ann)

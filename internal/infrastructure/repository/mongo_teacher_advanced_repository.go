@@ -34,6 +34,7 @@ func NewMongoMessageRepository(c *mongo.Collection) *MongoMessageRepository {
 	return &MongoMessageRepository{collection: c}
 }
 
+// --- Assignment ---
 func (r *MongoAssignmentRepository) CreateAssignment(ctx context.Context, a *entity.Assignment) error {
 	_, err := r.collection.InsertOne(ctx, a)
 	return err
@@ -112,6 +113,7 @@ func (r *MongoAssignmentRepository) ListAssignmentsByCourse(ctx context.Context,
 	return assignments, cursor.Err()
 }
 
+// --- Assessment ---
 func (r *MongoAssessmentRepository) CreateAssessment(ctx context.Context, a *entity.Assessment) error {
 	_, err := r.collection.InsertOne(ctx, a)
 	return err
@@ -190,6 +192,7 @@ func (r *MongoAssessmentRepository) ListAssessmentsByCourse(ctx context.Context,
 	return assessments, cursor.Err()
 }
 
+// --- Message ---
 func (r *MongoMessageRepository) CreateMessage(ctx context.Context, m *entity.Message) error {
 	_, err := r.collection.InsertOne(ctx, m)
 	return err
@@ -262,5 +265,26 @@ func (r *MongoMessageRepository) ListMessagesBySender(ctx context.Context, sende
 		}
 		messages = append(messages, &m)
 	}
+	return messages, cursor.Err()
+}
+
+func (r *MongoMessageRepository) ListMessagesForReceiver(ctx context.Context, receiverID primitive.ObjectID) ([]*entity.Message, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{"receiver_ids": receiverID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var messages []*entity.Message
+
+	for cursor.Next(ctx) {
+		var m entity.Message
+		
+		if err := cursor.Decode(&m); err != nil {
+			return nil, err
+		}
+		messages = append(messages, &m)
+	}
+
 	return messages, cursor.Err()
 }

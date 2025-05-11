@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,3 +14,7 @@ type Course struct {
 	AssignedTeacher []primitive.ObjectID `bson:"assigned_teachers" json:"assigned_teachers"`
 	CreatedAt 		time.Time		  	 `bson:"created_at" json:"created_at"`
 }
+
+var (
+	ErrCourseNotFound = errors.New("course not found")
+)
