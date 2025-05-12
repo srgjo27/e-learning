@@ -20,12 +20,13 @@ func NewMongoSubmissionRepository(c *mongo.Collection) *MongoSubmissionRepositor
 
 func (r *MongoSubmissionRepository) CreateSubmission(ctx context.Context, s *entity.Submission) error {
 	_, err := r.collection.InsertOne(ctx, s)
+	
 	return err
 }
 
 func (r *MongoSubmissionRepository) UpdateSubmission(ctx context.Context, s *entity.Submission) error {
 	if s.ID.IsZero() {
-		return errors.New("Submission ID required")
+		return errors.New("submission ID required")
 	}
 
 	filter := bson.M{"_id": s.ID}
@@ -55,6 +56,7 @@ func(r *MongoSubmissionRepository) GetSubmission(ctx context.Context, id string)
 	}
 
 	var s entity.Submission
+
 	err = r.collection.FindOne(ctx, bson.M{"_id": oid}).Decode(&s)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -73,8 +75,10 @@ func (r *MongoSubmissionRepository) ListSubmissionsByStudent(ctx context.Context
 	defer cursor.Close(ctx)
 
 	var subs []*entity.Submission
+
 	for cursor.Next(ctx) {
 		var s entity.Submission
+
 		if err := cursor.Decode(&s); err != nil {
 			return nil, err
 		}
@@ -96,8 +100,10 @@ func (r *MongoSubmissionRepository) ListSubmissionsByAssignmentAndStudent(ctx co
 	defer cursor.Close(ctx)
 
 	var subs []*entity.Submission
+
 	for cursor.Next(ctx) {
 		var s entity.Submission
+
 		if err := cursor.Decode(&s); err != nil {
 			return nil, err
 		}
@@ -105,26 +111,4 @@ func (r *MongoSubmissionRepository) ListSubmissionsByAssignmentAndStudent(ctx co
 	}
 
 	return subs, cursor.Err()
-}
-
-func (r *MongoSubmissionRepository) ListClassesByStudent(ctx context.Context, studentID primitive.ObjectID) ([]*entity.Class, error) {
-	filter := bson.M{"student_ids": studentID}
-	cursor, err := r.collection.Find(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var classes []*entity.Class
-
-	for cursor.Next(ctx) {
-		var cl entity.Class
-		
-		if err := cursor.Decode(&cl); err != nil {
-			return nil, err
-		}
-		classes = append(classes, &cl)
-	}
-
-	return classes, cursor.Err()
 }

@@ -39,8 +39,10 @@ func (r *MongoClassRepository) ListClassesByTeacher(ctx context.Context, teacher
 	defer cursor.Close(ctx)
 
 	var classes []*entity.Class
+
 	for cursor.Next(ctx) {
 		var cl entity.Class
+		
 		if err := cursor.Decode(&cl); err != nil {
 			return nil, err
 		}

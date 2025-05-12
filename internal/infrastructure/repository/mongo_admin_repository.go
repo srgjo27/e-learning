@@ -215,6 +215,28 @@ func (r *MongoClassRepository) ListClasses(ctx context.Context) ([]*entity.Class
 	return classes, cursor.Err()
 }
 
+func (r *MongoClassRepository) ListClassesByStudent(ctx context.Context, studentID primitive.ObjectID) ([]*entity.Class, error) {
+	filter := bson.M{"student_ids": studentID}
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var classes []*entity.Class
+
+	for cursor.Next(ctx) {
+		var cl entity.Class
+		
+		if err := cursor.Decode(&cl); err != nil {
+			return nil, err
+		}
+		classes = append(classes, &cl)
+	}
+
+	return classes, cursor.Err()
+}
+
 // --- Announcement ---
 func (r *MongoAnnouncementRepository) CreateAnnouncement(ctx context.Context, ann *entity.Announcement) error {
 	ann.CreatedAt = ann.CreatedAt.UTC()

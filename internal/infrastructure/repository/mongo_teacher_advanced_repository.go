@@ -182,12 +182,31 @@ func (r *MongoAssessmentRepository) ListAssessmentsByCourse(ctx context.Context,
 	defer cursor.Close(ctx)
 
 	var assessments []*entity.Assessment
+
 	for cursor.Next(ctx) {
 		var a entity.Assessment
+
 		if err := cursor.Decode(&a); err != nil {
 			return nil, err
 		}
 		assessments = append(assessments, &a)
+	}
+	return assessments, cursor.Err()
+}
+
+func (r *MongoAssessmentRepository) ListAssessments(ctx context.Context) ([]*entity.Assessment, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var assessments []*entity.Assessment
+	for cursor.Next(ctx) {
+		var assessment entity.Assessment
+		if err := cursor.Decode(&assessment); err != nil {
+			return nil, err
+		}
+		assessments = append(assessments, &assessment)
 	}
 	return assessments, cursor.Err()
 }

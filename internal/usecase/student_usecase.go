@@ -6,7 +6,6 @@ import (
 	"github.com/srgjo27/e-learning/internal/entity"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
 type SubmissionRepository interface {
 	CreateSubmission(ctx context.Context, s *entity.Submission) error
 	UpdateSubmission(ctx context.Context, s *entity.Submission) error
@@ -14,7 +13,6 @@ type SubmissionRepository interface {
 	ListSubmissionsByStudent(ctx context.Context, studentID primitive.ObjectID) ([]*entity.Submission, error)
 	ListSubmissionsByAssignmentAndStudent(ctx context.Context, assignmentID, studentID primitive.ObjectID) ([]*entity.Submission, error)
 }
-
 type StudentUseCase struct {
 	courseRepo 		CourseRepository
 	classRepo 		ClassRepository
