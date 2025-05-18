@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/srgjo27/e-learning/internal/entity"
 	"github.com/srgjo27/e-learning/internal/infrastructure/repository"
 	"github.com/srgjo27/e-learning/internal/interface/rest"
@@ -127,9 +128,16 @@ func main() {
 	// 	w.Write([]byte("Welcome to Student Area"))
 	// }))))
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	})
+
 	srv := &http.Server{
 		Addr:	":8080",
-		Handler: router,
+		Handler: c.Handler(router),
 	}
 
 	go func() {
